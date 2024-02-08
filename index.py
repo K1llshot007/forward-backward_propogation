@@ -1,4 +1,5 @@
 import numpy as np
+np.set_printoptions(suppress=True, precision=4)
 
 def forw_relu(matrix):
     # take the array from the input and multiply it with the weights then add the bias and keep it all in a variable result, so result = weight * activation + bias, then use the squasher on the result to send it to the next layer, so sqausher(result), lets say the squasher is relu, then relu = max(0, result)
@@ -78,7 +79,7 @@ def forw_softmax(matrix):#same thing to all the above calculations, they calcula
 
     for y in range(matrix.shape[0]):
         ans[y] = np.exp(matrix[y])/(denominator) 
-    print('from the function',ans)
+    # print('from the function',ans)
     return ans
 
 def back_relu(input, output, dzdy):
@@ -155,6 +156,7 @@ def back_fc(input, weight, bias, output, dzdy):
     ans.append(dzdx)
     ans.append(dzdw)
     ans.append(dzdb)
+    # print('hello')
     return ans
 
 def back_softmax(input, output, dzdy):
@@ -203,7 +205,7 @@ def understandingInput(filename):
     while lines<len(file):
         # print(file[lines])
         if file[lines][0] == 'f':
-
+            # print(file[lines])
 
             
             if file[lines].strip() == "forw_relu":
@@ -244,7 +246,7 @@ def understandingInput(filename):
 
                 
             elif file[lines].strip() == "forw_maxpool":
-                print('hello')
+                # print('hello')
                 #going to number of inputs
                 lines+=1 
                 numInputs = int(file[lines].strip())
@@ -260,7 +262,7 @@ def understandingInput(filename):
                 for i in inputMatrices:
                     result = forw_maxpool(i)
                 
-                print(result)
+                    # print(result)
 
 
 
@@ -277,7 +279,7 @@ def understandingInput(filename):
                     outputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1
                 
-                print(outputMatrices)
+                # print(outputMatrices)
                 # for i in range(len(outputMatrices)):
                 #     if(outputMatrices[i] == result[i]).all():
                 #         print('forward maxpool working')
@@ -338,10 +340,10 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                print(inputMatrices)
+                # print(inputMatrices)
                 for i in inputMatrices:
                     result = forw_softmax(i)
-                    print(result)
+                    # print(result)
 
 
                 # going to number of outputs 
@@ -355,12 +357,11 @@ def understandingInput(filename):
                     outputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1
                 
-                print(outputMatrices)
+                # print(outputMatrices)
             
             
-            
-            
-            
+
+
             elif file[lines].strip() == "forw_fc":#working as stated in pdf for the api call
                 #going to number of inputs
                 lines+=1 
@@ -377,7 +378,7 @@ def understandingInput(filename):
                 # for i in inputMatrices:
                 # print('input 1',inputMatrices[0], 'input2', inputMatrices[1], 'input3',inputMatrices[1])
                 result = forw_fc(inputMatrices[0], inputMatrices[1], inputMatrices[2])
-                # print('result' ,result)
+                # print(result)
                 # result = forw_fc(inputMatrices)
 
                 # print(result)
@@ -400,9 +401,10 @@ def understandingInput(filename):
                 #     else:
                 #         print("fc failed")
 
-
+            # print(file[lines])
         else:
             
+            # print(file[lines])
             if file[lines].strip() == "back_relu":
                 #going to number of inputs
                 lines+=1 
@@ -418,7 +420,7 @@ def understandingInput(filename):
                 # print(inputMatrices)
                     # for i in inputMatrices:
                 result = back_relu(inputMatrices[0], inputMatrices[1], inputMatrices[2])
-                # print(result)
+                # print('back relu',result)
                 # print(result)
 
                 # going to number of outputs 
@@ -530,7 +532,7 @@ def understandingInput(filename):
 
                 # print(inputMatrices)
                 result = back_softmax(inputMatrices[0],inputMatrices[1],inputMatrices[2] )
-                # print(result)
+                print(result)
 
 
                 # going to number of outputs 
@@ -588,7 +590,7 @@ def understandingInput(filename):
 
 
     
-            lines+=1
+            
 
 understandingInput('hw3testfile.txt') 
 
