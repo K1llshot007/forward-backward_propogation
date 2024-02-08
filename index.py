@@ -590,6 +590,6 @@ def understandingInput(filename):
     
             lines+=1
 
-understandingInput('C:\\Users\\abhin\\Desktop\\PSU\\computer_vision_psu\\hw2\\hw3testfile.txt') 
+understandingInput('hw3testfile.txt') 
 
 
