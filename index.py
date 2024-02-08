@@ -529,7 +529,7 @@ def understandingInput(filename):
                     lines+=1 
 
                 # print(inputMatrices)
-                result = back_softmax(inputMatrices)
+                result = back_softmax(inputMatrices[0],inputMatrices[1],inputMatrices[2] )
                 # print(result)
 
 
