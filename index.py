@@ -1,13 +1,11 @@
 import numpy as np
-np.set_printoptions(suppress=True, precision=4)
+np.set_printoptions(suppress=True, precision=6)
 
 def forw_relu(matrix):
-    # take the array from the input and multiply it with the weights then add the bias and keep it all in a variable result, so result = weight * activation + bias, then use the squasher on the result to send it to the next layer, so sqausher(result), lets say the squasher is relu, then relu = max(0, result)
-    # print("Hellow World ")
 
     resultingMatrix = []
 
-    
+    # using np max between 0 and 1 we remove all the negative values and then give out the new array, memory could be saved here but dont want to touch it
     resultingMatrix.append(np.maximum(0, matrix))
     
     return resultingMatrix
@@ -18,6 +16,7 @@ def forw_maxpool(matrix):
     row = 0
     col = 0
     ansMatrix = np.zeros(((matrix.shape[0]//2), (matrix.shape[1]//2)))
+    # this loop uses stride length 2 and takes the filter across, at every step the max of 2x2 matrix is calculated and then input in another ans matrix which is then output
     for x in range(matrix.shape[0]//2):
         for y in range(matrix.shape[1]//2):
             ansMatrix[x][y] = max(matrix[row][col], matrix[row][col+1], matrix[row+1][col], matrix[row+1][col+1])
@@ -28,64 +27,53 @@ def forw_maxpool(matrix):
     
     return ansMatrix
 
-def forw_meanpool(matrix):#working and giving correct answers but if is giving incorrect result
-    # resultingMatrices = []
+def forw_meanpool(matrix):
 
-    # for i in matrices:
     row = 0
     col = 0
     ansMatrix = np.zeros(((matrix.shape[0]//2), (matrix.shape[1]//2)), dtype=np.float32)
+    # does the same things as maxpool but instead of taking max takes the mean
     for x in range(matrix.shape[0]//2):
         for y in range(matrix.shape[1]//2):
-            # ansMatrix[x][y] = np.mean((matrix[row][col] , matrix[row][col+1] , matrix[row+1][col] , matrix[row+1][col+1]), dtype=np.float32)
             ansMatrix[x][y] = (matrix[row][col] + matrix[row][col+1] + matrix[row+1][col] + matrix[row+1][col+1])/4
             col += 2
         row += 2
         col=0
-    # resultingMatrices.append(ansMatrix)    
 
     
     return ansMatrix
 
-def forw_fc(a, weight, b):#working  fine but same thing float 32 gives answers which are very close, like 0.001 close
-    # resultingMatrices = []
-    
+def forw_fc(a, weight, b):
     input = a
     weights = weight
     bias = b
 
     ans = 0
-    
-    # dotProduct = np.dot(input,weights)
-    # print(dotProduct)
+    # just goes through the matrix and does the weight * input, making it scalar and then add a bias to it
     for x in range(input.shape[0]):
         for y in range(input.shape[1]):
             ans += input[x][y] * weights[x][y]
     
     ans += bias
 
-    # resultingMatrices.append(ans)?
-    # print('this is from the function', ans)
     return ans
 
-def forw_softmax(matrix):#same thing to all the above calculations, they calculate to some other degree of accuracy, which is not in the output
-    
+def forw_softmax(matrix):
     denominator =0
-    
+    # first take the average and make the  denominator
     ans = np.zeros((matrix.shape[0],1),dtype=np.float32)
     for x in range(matrix.shape[0]):
         denominator +=  np.exp(matrix[x])
 
-
+    # now divide each element by the denominator
     for y in range(matrix.shape[0]):
         ans[y] = np.exp(matrix[y])/(denominator) 
-    # print('from the function',ans)
     return ans
 
 def back_relu(input, output, dzdy):
 
     ans = np.zeros((input.shape[0],input.shape[1]), dtype=np.float32)
-
+    # if  the number in imput is greater than zero make it one otherwise make it zero and then multiply each element by dzdy
     for x in range(input.shape[0]):
         for y in range(input.shape[1]):
             if output[x][y] > 0 :
@@ -99,6 +87,7 @@ def back_maxpool(input, output, dzdy):
     ans = np.zeros((input.shape[0],input.shape[1]), dtype=np.float32)
     row =0
     col =0
+    #  find the max value index, and then make the value of that index 1 and make the rest 0, then multiply that value with the corresponding dzdy value as only that value will contribute
     for x in range(input.shape[0]//2):
             for y in range(input.shape[1]//2):
                 if output[x][y] == input[row][col]:
@@ -126,15 +115,13 @@ def back_maxpool(input, output, dzdy):
             row += 2
             col=0
 
-    # for x in range(input.shape[0]):
-    #         for y in range(input.shape[1]):
-    #             ans[x][y] = input[x][y]*dzdy[x//2][y//2]
+    
 
     return ans
 
 def back_meanpool(input, output, dzdy):
     ans = np.zeros((input.shape[0],input.shape[1]), dtype=np.float32)
-
+    # multiply the filter area with 0.25 as we are using 2x2 filter
     for x in range(input.shape[0]):
             for y in range(input.shape[1]):
                 ans[x][y] = 0.25*dzdy[x//2][y//2]
@@ -146,7 +133,7 @@ def back_fc(input, weight, bias, output, dzdy):
     dzdx = np.zeros((input.shape[0],input.shape[1]), dtype=np.float32)
     dzdb = np.zeros((1,1), dtype=np.float32)
     dzdb[0][0] = dzdy[0][0]
-
+    # according to the formulas described in the derivations take appropriate products and then return answer
     for x in range(input.shape[0]):
         for y in range(input.shape[1]):
             dzdw[x][y] = dzdy[0][0]*input[x][y]
@@ -156,12 +143,27 @@ def back_fc(input, weight, bias, output, dzdy):
     ans.append(dzdx)
     ans.append(dzdw)
     ans.append(dzdb)
-    # print('hello')
     return ans
 
 def back_softmax(input, output, dzdy):
     ans = np.zeros((input.shape[0],input.shape[1]), dtype=np.float32)
 
+    row = 0
+    col =0
+    # this is if dzdx1 = dzdy1*y1(1-y1) + dzdy2*(-y1*y2) + dzdy3*(-y1*y3) + ..., according to this, the values were added and calculated
+    for row in  range(output.shape[0]):
+        for y in range(output.shape[0]):
+
+            if row == y:
+                ans[row][0] += dzdy[y][0] *(1-output[y][0])*output[y][0]
+            if row !=y :
+                ans[row][col] += dzdy[y][0]*(output[y][col])*(-1)*output[row][col]
+        
+        
+
+    
+
+    return ans
 
             
 
@@ -172,7 +174,6 @@ def back_softmax(input, output, dzdy):
 
 
 
-#all understanding input function are below, these function help parse the input, check which sqausher or which type of function if being used, forms the input array and sends it to the correct function
     
 
     
@@ -201,11 +202,10 @@ def understandingInput(filename):
     lines = 0
     
 
-    # print(file)
     while lines<len(file):
-        # print(file[lines])
+
+        
         if file[lines][0] == 'f':
-            # print(file[lines])
 
             
             if file[lines].strip() == "forw_relu":
@@ -220,10 +220,9 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 for i in inputMatrices:
                     result = forw_relu(i)
-                    # print("result", result)
+                    # print(result)
 
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
@@ -236,17 +235,12 @@ def understandingInput(filename):
                     outputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1
 
-                # print(lines)
                 # print(outputMatrices)
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('forward relu working')
 
 
 
                 
             elif file[lines].strip() == "forw_maxpool":
-                # print('hello')
                 #going to number of inputs
                 lines+=1 
                 numInputs = int(file[lines].strip())
@@ -258,7 +252,6 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 for i in inputMatrices:
                     result = forw_maxpool(i)
                 
@@ -266,7 +259,6 @@ def understandingInput(filename):
 
 
 
-                # print(result)
 
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
@@ -280,9 +272,6 @@ def understandingInput(filename):
                     lines+=1
                 
                 # print(outputMatrices)
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('forward maxpool working')
 
 
 
@@ -299,13 +288,10 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 for i in inputMatrices:
                     result = forw_meanpool(i)
                     # print(result)
-                # result = forw_meanpool(inputMatrices)
 
-                # print(result)
 
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
@@ -319,11 +305,6 @@ def understandingInput(filename):
                     lines+=1
                 
                 # print(outputMatrices)
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('forward meanpool working')
-                #     else:
-                #         print("Mean pooling failed")
 
 
 
@@ -340,7 +321,6 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 for i in inputMatrices:
                     result = forw_softmax(i)
                     # print(result)
@@ -362,7 +342,7 @@ def understandingInput(filename):
             
 
 
-            elif file[lines].strip() == "forw_fc":#working as stated in pdf for the api call
+            elif file[lines].strip() == "forw_fc":
                 #going to number of inputs
                 lines+=1 
                 numInputs = int(file[lines].strip())
@@ -374,14 +354,9 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices[2])
-                # for i in inputMatrices:
-                # print('input 1',inputMatrices[0], 'input2', inputMatrices[1], 'input3',inputMatrices[1])
                 result = forw_fc(inputMatrices[0], inputMatrices[1], inputMatrices[2])
                 # print(result)
-                # result = forw_fc(inputMatrices)
 
-                # print(result)
 
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
@@ -395,16 +370,10 @@ def understandingInput(filename):
                     lines+=1
                 
                 # print(outputMatrices)
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('forward fc working')
-                #     else:
-                #         print("fc failed")
 
-            # print(file[lines])
+
         else:
             
-            # print(file[lines])
             if file[lines].strip() == "back_relu":
                 #going to number of inputs
                 lines+=1 
@@ -417,12 +386,8 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
-                    # for i in inputMatrices:
                 result = back_relu(inputMatrices[0], inputMatrices[1], inputMatrices[2])
-                # print('back relu',result)
-                # print(result)
-
+                print(result)
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
 
@@ -433,12 +398,8 @@ def understandingInput(filename):
                 for  i in range(numOutputs):
                     outputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1
-
+                print(outputMatrices)
                 
-                # print(outputMatrices)
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('backward relu working')
 
 
 
@@ -455,11 +416,10 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 
                 result = back_maxpool(inputMatrices[0], inputMatrices[1], inputMatrices[2])
+                print(result)
 
-                # print(result)
 
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
@@ -471,11 +431,7 @@ def understandingInput(filename):
                 for  i in range(numOutputs):
                     outputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1
-                
-                # print(outputMatrices)
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('forward maxpool working')
+                print(outputMatrices)
 
 
 
@@ -492,10 +448,9 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 result = back_meanpool(inputMatrices[0],inputMatrices[1],inputMatrices[2])
 
-                # print(result)
+                print(result)
 
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
@@ -508,12 +463,7 @@ def understandingInput(filename):
                     outputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1
                 
-                # print(outputMatrices)
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('forward meanpool working')
-                #     else:
-                #         print("Mean pooling failed")
+                print(outputMatrices)
 
 
 
@@ -530,9 +480,8 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 result = back_softmax(inputMatrices[0],inputMatrices[1],inputMatrices[2] )
-                print(result)
+                # print(result)
 
 
                 # going to number of outputs 
@@ -546,7 +495,7 @@ def understandingInput(filename):
                     outputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1
                 
-                print(outputMatrices)
+                # print(outputMatrices)
             
             
             
@@ -564,10 +513,9 @@ def understandingInput(filename):
                     inputMatrices.append(formMatrix(file[lines].strip().split(' ')))  
                     lines+=1 
 
-                # print(inputMatrices)
                 result = back_fc(inputMatrices[0], inputMatrices[1], inputMatrices[2], inputMatrices[3], inputMatrices[4])
 
-                # print(result[2])
+                # print(result)
 
                 # going to number of outputs 
                 numOutputs = int(file[lines].strip())
@@ -581,11 +529,6 @@ def understandingInput(filename):
                     lines+=1
                 
                 # print(outputMatrices[2])
-                # for i in range(len(outputMatrices)):
-                #     if(outputMatrices[i] == result[i]).all():
-                #         print('forward fc working')
-                #     else:
-                #         print("fc failed")
 
 
 
